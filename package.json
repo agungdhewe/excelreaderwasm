@@ -1,0 +1,38 @@
+{
+  "name": "excelreaderwasm",
+  "version": "0.1.0",
+  "description": "High-performance Excel spreadsheet reader and chunk parser using WebAssembly & Rust",
+  "main": "index.js",
+  "module": "index.js",
+  "types": "index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build:wasm": "wasm-pack build --target web --out-dir pkg",
+    "build": "npm run build:wasm",
+    "dev": "vite demo",
+    "serve": "npx serve demo"
+  },
+  "keywords": [
+    "excel",
+    "xlsx",
+    "xls",
+    "wasm",
+    "webassembly",
+    "rust",
+    "chunk",
+    "upload",
+    "streaming",
+    "spreadsheet"
+  ],
+  "author": "Agung Dhewe",
+  "license": "MIT",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "pkg/"
+  ],
+  "devDependencies": {
+    "vite": "^6.0.0",
+    "xlsx": "^0.18.5"
+  }
+}

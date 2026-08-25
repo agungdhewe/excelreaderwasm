@@ -1,0 +1,28 @@
+[package]
+name = "excelreaderwasm"
+version = "0.1.0"
+edition = "2021"
+description = "High-performance Excel spreadsheet reader and chunk parser using WebAssembly"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+calamine = { version = "0.26", features = ["dates"] }
+chrono = "0.4"
+crc32fast = "1.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["console"] }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
