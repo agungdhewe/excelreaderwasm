@@ -9,8 +9,8 @@
   "scripts": {
     "build:wasm": "wasm-pack build --target web --out-dir pkg",
     "build": "npm run build:wasm",
-    "dev": "vite demo",
-    "serve": "npx serve demo"
+    "dev": "vite",
+    "test": "node test/test_upload.js"
   },
   "keywords": [
     "excel",
