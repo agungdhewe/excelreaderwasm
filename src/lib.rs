@@ -183,9 +183,13 @@ impl ExcelReader {
         serde_wasm_bindgen_to_js(&self.sheet_names)
     }
 
-    /// Retrieve headers for a given sheet index
+    /// Retrieve headers for a given sheet index and header row number (1-based, default 1)
     #[wasm_bindgen(js_name = getHeaders)]
-    pub fn get_headers(&self, sheet_index: Option<usize>) -> Result<JsValue, JsValue> {
+    pub fn get_headers(
+        &self,
+        sheet_index: Option<usize>,
+        header_rownum: Option<usize>,
+    ) -> Result<JsValue, JsValue> {
         let cursor = Cursor::new(&self.bytes);
         let mut workbook = open_workbook_auto_from_rs(cursor)
             .map_err(|e| JsValue::from_str(&format!("Gagal membaca workbook: {}", e)))?;
@@ -197,9 +201,10 @@ impl ExcelReader {
         let range = workbook.worksheet_range(sheet_name)
             .map_err(|e| JsValue::from_str(&format!("Gagal membaca sheet '{}': {}", sheet_name, e)))?;
 
-        let mut row_iter = range.rows();
+        let header_idx = header_rownum.unwrap_or(1).saturating_sub(1);
+        let mut row_iter = range.rows().skip(header_idx);
         let header_row = row_iter.next()
-            .ok_or_else(|| JsValue::from_str("File spreadsheet kosong (tidak ada baris header)"))?;
+            .ok_or_else(|| JsValue::from_str(&format!("File spreadsheet tidak memiliki baris header pada baris ke-{}", header_idx + 1)))?;
 
         let actual_headers: Vec<String> = header_row.iter().map(|c| c.to_string().trim().to_string()).collect();
         serde_wasm_bindgen_to_js(&actual_headers)
@@ -207,7 +212,12 @@ impl ExcelReader {
 
     /// Validates the sheet header against valid_header specification
     #[wasm_bindgen(js_name = validateHeaders)]
-    pub fn validate_headers(&self, valid_header: &str, sheet_index: Option<usize>) -> Result<JsValue, JsValue> {
+    pub fn validate_headers(
+        &self,
+        valid_header: &str,
+        sheet_index: Option<usize>,
+        header_rownum: Option<usize>,
+    ) -> Result<JsValue, JsValue> {
         let cursor = Cursor::new(&self.bytes);
         let mut workbook = open_workbook_auto_from_rs(cursor)
             .map_err(|e| JsValue::from_str(&format!("Gagal membaca workbook: {}", e)))?;
@@ -219,9 +229,10 @@ impl ExcelReader {
         let range = workbook.worksheet_range(sheet_name)
             .map_err(|e| JsValue::from_str(&format!("Gagal membaca sheet '{}': {}", sheet_name, e)))?;
 
-        let mut row_iter = range.rows();
+        let header_idx = header_rownum.unwrap_or(1).saturating_sub(1);
+        let mut row_iter = range.rows().skip(header_idx);
         let header_row = row_iter.next()
-            .ok_or_else(|| JsValue::from_str("File spreadsheet kosong (tidak ada baris header)"))?;
+            .ok_or_else(|| JsValue::from_str(&format!("File spreadsheet tidak memiliki baris header pada baris ke-{}", header_idx + 1)))?;
 
         let actual_headers: Vec<String> = header_row.iter().map(|c| c.to_string().trim().to_string()).collect();
         let expected_headers = parse_valid_headers(valid_header);
@@ -262,6 +273,7 @@ impl ExcelReader {
         mapping_header: &str,
         row_chunk: usize,
         sheet_index: Option<usize>,
+        header_rownum: Option<usize>,
         callback: Option<js_sys::Function>,
     ) -> Result<JsValue, JsValue> {
         let cursor = Cursor::new(&self.bytes);
@@ -276,11 +288,12 @@ impl ExcelReader {
         let range = workbook.worksheet_range(&sheet_name)
             .map_err(|e| JsValue::from_str(&format!("Gagal membaca sheet '{}': {}", sheet_name, e)))?;
 
-        let mut row_iter = range.rows();
+        let header_idx = header_rownum.unwrap_or(1).saturating_sub(1);
+        let mut row_iter = range.rows().skip(header_idx);
         
-        // 1. Read Header Row (Row 0)
+        // 1. Read Header Row
         let header_row = row_iter.next()
-            .ok_or_else(|| JsValue::from_str("File spreadsheet kosong (tidak ada baris header)"))?;
+            .ok_or_else(|| JsValue::from_str(&format!("File spreadsheet tidak memiliki baris header pada baris ke-{}", header_idx + 1)))?;
 
         let actual_headers: Vec<String> = header_row.iter().map(|c| c.to_string().trim().to_string()).collect();
 
@@ -450,10 +463,11 @@ pub fn parse_spreadsheet_direct(
     mapping_header: &str,
     row_chunk: usize,
     sheet_index: Option<usize>,
+    header_rownum: Option<usize>,
     callback: Option<js_sys::Function>,
 ) -> Result<JsValue, JsValue> {
     let reader = ExcelReader::new(bytes)?;
-    reader.parse_spreadsheet(valid_header, mapping_header, row_chunk, sheet_index, callback)
+    reader.parse_spreadsheet(valid_header, mapping_header, row_chunk, sheet_index, header_rownum, callback)
 }
 
 fn serde_wasm_bindgen_to_js<T: Serialize>(val: &T) -> Result<JsValue, JsValue> {

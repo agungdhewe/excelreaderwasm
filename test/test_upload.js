@@ -130,4 +130,39 @@ try {
   console.log(err.message);
 }
 
+console.log('\n--- 5. Testing headerRownum (Header at Row 3 with title rows above) ---');
+const dataWithHeader3 = [
+  ['LAPORAN DATA KARYAWAN', '', '', ''],
+  ['Tanggal: 2026-09-11 | Cabang: Jakarta', '', '', ''],
+  ['No', 'Nama', 'Alamat', 'Kota']
+];
+for (let i = 1; i <= 25; i++) {
+  dataWithHeader3.push([i, `User ${i}`, `Jl. Gatot Subroto No. ${i}`, 'Jakarta']);
+}
+const ws3 = XLSX.utils.aoa_to_sheet(dataWithHeader3);
+const wb3 = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb3, ws3, 'CustomHeaderSheet');
+const excelBuffer3 = XLSX.write(wb3, { type: 'buffer', bookType: 'xlsx' });
+
+const result3 = await uploadSpreadsheet({
+  file: excelBuffer3,
+  validHeader: 'No|Nama|Alamat|Kota',
+  mappingHeader: { id: 'No', nama: 'Nama', kota: 'Kota' },
+  rowChunk: 10,
+  headerRownum: 3
+});
+
+console.log('Result with headerRownum=3:');
+console.log('Total Rows:', result3.totalRows);
+console.log('Total Chunks:', result3.totalChunks);
+console.log('First chunk sample:', result3.chunks[0][0]);
+
+if (result3.totalRows !== 25) {
+  throw new Error(`Expected 25 data rows, but got ${result3.totalRows}`);
+}
+if (result3.chunks[0][0].id !== 1 || result3.chunks[0][0].nama !== 'User 1') {
+  throw new Error('Data mapping with headerRownum=3 failed!');
+}
+
 console.log('\n✅ ALL INTEGRATION & VERIFICATION TESTS PASSED SUCCESSFULLY! 🚀');
+

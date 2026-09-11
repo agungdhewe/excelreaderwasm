@@ -7,10 +7,13 @@ const dropzone = document.getElementById('dropzone');
 const dropzoneText = document.getElementById('dropzone-text');
 const btnUpload = document.getElementById('btnUpload');
 const btnGenSample = document.getElementById('btnGenSample');
+const btnGenHeader3 = document.getElementById('btnGenHeader3');
 const btnGenBig = document.getElementById('btnGenBig');
 const validHeaderInput = document.getElementById('validHeader');
 const mappingHeaderInput = document.getElementById('mappingHeader');
 const rowChunkInput = document.getElementById('rowChunk');
+const sheetIndexInput = document.getElementById('sheetIndex');
+const headerRownumInput = document.getElementById('headerRownum');
 
 const progressSection = document.getElementById('progressSection');
 const progressBar = document.getElementById('progressBar');
@@ -59,9 +62,19 @@ fileInput.addEventListener('change', () => {
   }
 });
 
-function generateExcel(rowCount, filename) {
-  log(`Membuat file Excel sample dengan ${rowCount.toLocaleString()} baris...`, 'info');
-  const data = [['No', 'Nama', 'Alamat', 'Kota']];
+function generateExcel(rowCount, filename, headerRow = 1) {
+  log(`Membuat file Excel sample (${rowCount.toLocaleString()} baris, header di baris ${headerRow})...`, 'info');
+  const data = [];
+  
+  if (headerRow === 3) {
+    // Row 1: Title Banner
+    data.push(['LAPORAN DATA PENGGUNA', '', '', '']);
+    // Row 2: Metadata / Subtitle
+    data.push(['Tanggal Export: 2026-09-11 | Sistem: ExcelReaderWasm', '', '', '']);
+  }
+  
+  // Header row
+  data.push(['No', 'Nama', 'Alamat', 'Kota']);
   const cities = ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang', 'Yogyakarta', 'Makassar', 'Bali'];
   
   for (let i = 1; i <= rowCount; i++) {
@@ -80,15 +93,20 @@ function generateExcel(rowCount, filename) {
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   blob.name = filename;
   setFile(blob, filename);
-  log(`Sample Excel dibuat (${buffer.byteLength.toLocaleString()} bytes). Klik tombol Mulai Upload!`, 'success');
+  headerRownumInput.value = String(headerRow);
+  log(`Sample Excel dibuat (${buffer.byteLength.toLocaleString()} bytes, Header Row: ${headerRow}). Klik tombol Mulai Upload!`, 'success');
 }
 
 btnGenSample.addEventListener('click', () => {
-  generateExcel(105, 'sample_105_rows.xlsx');
+  generateExcel(105, 'sample_105_rows.xlsx', 1);
+});
+
+btnGenHeader3.addEventListener('click', () => {
+  generateExcel(50, 'sample_header_at_row_3.xlsx', 3);
 });
 
 btnGenBig.addEventListener('click', () => {
-  generateExcel(10000, 'sample_10000_rows.xlsx');
+  generateExcel(10000, 'sample_10000_rows.xlsx', 1);
 });
 
 // Mock Server State untuk demonstrasi verifikasi
@@ -142,6 +160,7 @@ btnUpload.addEventListener('click', async () => {
 
   btnUpload.disabled = true;
   btnGenSample.disabled = true;
+  btnGenHeader3.disabled = true;
   btnGenBig.disabled = true;
   progressSection.style.display = 'block';
   previewCard.style.display = 'none';
@@ -151,14 +170,18 @@ btnUpload.addEventListener('click', async () => {
   const validHeader = validHeaderInput.value;
   const mappingHeader = mappingHeaderInput.value;
   const rowChunk = parseInt(rowChunkInput.value, 10) || 10;
+  const sheetIndex = parseInt(sheetIndexInput.value, 10) || 0;
+  const headerRownum = parseInt(headerRownumInput.value, 10) || 1;
 
-  log(`Memulai uploadSpreadsheet (rowChunk: ${rowChunk})...`, 'info');
+  log(`Memulai uploadSpreadsheet (rowChunk: ${rowChunk}, sheetIndex: ${sheetIndex}, headerRownum: ${headerRownum})...`, 'info');
 
   const startTime = performance.now();
   let collectedRows = [];
 
   try {
     const result = await uploadSpreadsheet(selectedFile, validHeader, mappingHeader, rowChunk, {
+      sheetIndex,
+      headerRownum,
       onUploading: async (chunk, meta) => {
         // 1. Kirim chunk ke server
         mockServer.receiveChunk(meta.uploadId, chunk, meta);
@@ -235,6 +258,7 @@ btnUpload.addEventListener('click', async () => {
   } finally {
     btnUpload.disabled = false;
     btnGenSample.disabled = false;
+    btnGenHeader3.disabled = false;
     btnGenBig.disabled = false;
   }
 });

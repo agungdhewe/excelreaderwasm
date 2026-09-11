@@ -54,6 +54,9 @@ export interface UploadSpreadsheetOptions {
   mappingHeader?: Record<string, string> | string;
   rowChunk?: number;
   sheetIndex?: number;
+  sheet_index?: number;
+  headerRownum?: number;
+  header_rownum?: number;
   uploadId?: string;
   wasmUrl?: string | URL;
   onUploading?: (chunk: any[], meta: ChunkMeta) => Promise<void> | void;
@@ -99,13 +102,14 @@ export class ExcelReader {
   constructor(bytes: Uint8Array);
   free(): void;
   getSheetNames(): string[];
-  getHeaders(sheet_index?: number): string[];
-  validateHeaders(valid_header: string, sheet_index?: number): { valid: boolean; headers: string[] };
+  getHeaders(sheet_index?: number, header_rownum?: number): string[];
+  validateHeaders(valid_header: string, sheet_index?: number, header_rownum?: number): { valid: boolean; headers: string[] };
   parseSpreadsheet(
     valid_header: string,
     mapping_header: string,
     row_chunk: number,
     sheet_index?: number | null,
+    header_rownum?: number | null,
     callback?: Function | null
   ): any;
 }
@@ -116,6 +120,7 @@ export function parseSpreadsheetDirect(
   mapping_header: string,
   row_chunk: number,
   sheet_index?: number | null,
+  header_rownum?: number | null,
   callback?: Function | null
 ): any;
 
